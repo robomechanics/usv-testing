@@ -130,11 +130,15 @@ class VesselModel:
     """
     Extended dynamics function. Assumes input state is augmented with hydrodynamic coefficients 
     """
-    def extended_dynamics(self, Sn: np.ndarray, Un: np.ndarray, Cn: np.ndarray):
+    def extended_dynamics(self, Sn: np.ndarray, Un: np.ndarray, Z: np.ndarray):
         # state s in form [x y psi u v r]
-        # Hydrodynamic coeff Cn in form [X_u X_uu Y_v Y_vv Y_r N_v N_r N_rr X_du Y_dv Y_dr N_dv N_dr]
+        # Hydrodynamic coeff Cn in form [X_u X_uu Y_v Y_vv Y_r N_v N_r N_rr X_du Y_dv Y_dr N_dv N_dr] + [G...] of fudge factors
         x, y, psi, u, v, r = Sn
+
+        Cn = Z[:13]
+        Gn = Z[13:]
         X_u, X_uu, Y_v, Y_vv, Y_r, N_v, N_r, N_rr, X_du, Y_dv, Y_dr, N_dv, N_dr = Cn
+        G_u, G_v, G_r, G_uu, G_vv, G_rr = Gn
 
         # Calculate mass matrix
         M = np.zeros((3,3))
@@ -175,6 +179,8 @@ class VesselModel:
         #print(D)
 
         duvr = Minv@Un - Minv@(C+D)@uvr
+        duvr += np.array([G_u, G_v, G_r])
+        duvr += np.array([G_uu**2, G_vv**2, G_rr**2])
 
         dsdt = np.zeros(len(Sn))
         dsdt[:3] = dxypsi
