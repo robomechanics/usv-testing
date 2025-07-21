@@ -1,6 +1,7 @@
 from vessel_models import VesselModel
 import numpy as np
 import cyipopt as ipopt
+import os
 
 class TrajOpt:
     def __init__(self, model: VesselModel, N, ns, nu, dt, Qvec, Rvec, Qfvec, s0, sf):
@@ -172,7 +173,9 @@ class TrajOpt:
             x0=self.Z0,
             constraints=constraints,
             tol=1e-3,
-            options={"print_level": 5}
+            options={"disp": 5,
+                     'linear_solver': 'ma57',
+                     'hsllib': f"{os.environ['CONDA_PREFIX']}/lib/x86_64-linux-gnu/libcoinhsl.so"}
         )
 
 class MPC:
@@ -278,5 +281,7 @@ class MPC:
             x0=self.Z0,
             constraints=constraints,
             tol=1e-3,
-            options={"disp": 5}
+            options={"disp": 5,
+                     'linear_solver': 'ma57',
+                     'hsllib': f"{os.environ['CONDA_PREFIX']}/lib/x86_64-linux-gnu/libcoinhsl.so"}
         )

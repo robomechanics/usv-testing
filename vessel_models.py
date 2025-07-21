@@ -38,6 +38,17 @@ class VesselModel:
         Snp1 = Sn + (dt/6)*(k1 + 2*k2 + 2*k3 + k4)
         return Snp1
     
+    """
+    Extended dynamics RK4 function. Assumes input state is augmented with hydrodynamic coefficients
+    """
+    def extended_rk4(self, Sn, Un, Cn, dt):
+        k1 = self.extended_dynamics(Sn, Un, Cn)
+        k2 = self.extended_dynamics(Sn + dt*k1/2, Un, Cn)
+        k3 = self.extended_dynamics(Sn + dt*k2/2, Un, Cn)
+        k4 = self.extended_dynamics(Sn + dt*k3, Un, Cn)
+        Snp1 = Sn + (dt/6)*(k1 + 2*k2 + 2*k3 + k4)
+        return Snp1
+    
     def rk4_addvel(self, Sn, Un, dt):
         angle = np.pi/3
         mag = 0.05
@@ -60,6 +71,16 @@ class VesselModel:
 
         midpoint = 0.5 * (S1 + S2) + dt/8.0 * (ds1 - ds2)
         dmid = self.dynamics(midpoint, Un)
+
+        f = S1 + dt/6.0 * (ds1 + 4.0 * dmid + ds2) - S2
+        return f
+    
+    def extended_hermite_simpson(self, S1, S2, Un, Cn, dt):
+        ds1 = self.extended_dynamics(S1, Un, Cn)
+        ds2 = self.extended_dynamics(S2, Un, Cn)
+
+        midpoint = 0.5 * (S1 + S2) + dt/8.0 * (ds1 - ds2)
+        dmid = self.extended_dynamics(midpoint, Un, Cn)
 
         f = S1 + dt/6.0 * (ds1 + 4.0 * dmid + ds2) - S2
         return f
@@ -101,7 +122,61 @@ class VesselModel:
 
         duvr = self.Minv@Un - self.Minv@(C+D)@uvr
 
-        dsdt = np.zeros(6)
+        dsdt = np.zeros(len(Sn))
+        dsdt[:3] = dxypsi
+        dsdt[3:] = duvr
+        return dsdt
+    
+    """
+    Extended dynamics function. Assumes input state is augmented with hydrodynamic coefficients 
+    """
+    def extended_dynamics(self, Sn: np.ndarray, Un: np.ndarray, Cn: np.ndarray):
+        # state s in form [x y psi u v r]
+        # Hydrodynamic coeff Cn in form [X_u X_uu Y_v Y_vv Y_r N_v N_r N_rr X_du Y_dv Y_dr N_dv N_dr]
+        x, y, psi, u, v, r = Sn
+        X_u, X_uu, Y_v, Y_vv, Y_r, N_v, N_r, N_rr, X_du, Y_dv, Y_dr, N_dv, N_dr = Cn
+
+        # Calculate mass matrix
+        M = np.zeros((3,3))
+        M[0,0] = self.m - X_du
+        M[1,1] = self.m - Y_dv
+        M[1,2] = self.m*self.x_g - Y_dr
+        M[2,1] = self.m*self.x_g - N_dv
+        M[2,2] = self.I_z - N_dr
+        #print(M)
+
+        Minv = inv(M)
+
+        # Calculate change in NED position
+        R = np.eye(3)
+        R[0,0] = np.cos(psi)
+        R[0,1] = -np.sin(psi)
+        R[1,0] = np.sin(psi)
+        R[1,1] = np.cos(psi)
+        #print(R)
+
+        uvr = np.array([u,v,r])
+        dxypsi = R @ uvr
+
+        # Calculate change in  body velocity
+        C = np.zeros((3,3))
+        C[0,2] = -(self.m-Y_dv)*v - (self.m*self.x_g-Y_dr)*r
+        C[1,2] = (self.m-X_du)*u
+        C[2,0] = (self.m-Y_dv)*v + (self.m*self.x_g-Y_dr)*r
+        C[2,1] = -(self.m-X_du)*u
+        #print(C)
+
+        D = np.zeros((3,3))
+        D[0,0] = -X_u - X_uu*np.abs(u)
+        D[1,1] = -Y_v - Y_vv*np.abs(v)
+        D[1,2] = -Y_r
+        D[2,1] = -N_v
+        D[2,2] = -N_r - N_rr*np.abs(r)
+        #print(D)
+
+        duvr = Minv@Un - Minv@(C+D)@uvr
+
+        dsdt = np.zeros(len(Sn))
         dsdt[:3] = dxypsi
         dsdt[3:] = duvr
         return dsdt
