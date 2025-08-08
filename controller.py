@@ -289,3 +289,99 @@ class MPC:
                         'linear_solver': 'ma57',
                         'hsllib': f"{os.environ['CONDA_PREFIX']}/lib/x86_64-linux-gnu/libcoinhsl.so"}
             )
+
+class MHE:
+    def __init__(self, model: VesselModel, N, ns, nu, nc, dt, Qvec, Rvec, Qfvec, Pvec, c0, sref, uref):
+        self.model = model
+        self.N = N # this is the MPC window size, not the N of the entire trajectory
+        self.ns = ns
+        self.nu = nu
+        self.nc = nc # number of hydrodynamic coefficients (default 13) + however many tweak variables
+        self.dt = dt
+
+        self.Qvec = Qvec
+        
+        self.Rvec = Rvec
+        self.Qfvec = Qfvec
+        self.Pvec = Pvec
+        self.Q = np.diag(Qvec)
+        self.R = np.diag(Rvec)
+        self.Qf = np.diag(Qfvec)
+        self.P = np.diag(Pvec) # weight matrix for coeff cost (to reduce difference between coefficients each run)
+
+        self.c0 = c0 # initial guess (or warm start) of hydrodynamic coefficients
+        self.sref = sref # reference trajectory MPC is following
+        self.uref = uref # reference controls for estimated coefficient feed forward
+
+        # coeff clamps
+        self.c_min = -100
+        self.c_max = 100
+
+        self.Z0 = self.make_initial_guess()
+        #assert len(self.Z0) == (N-1)*nc, "Length of initial guess does not match length calculated from given N and nc"
+
+    def make_initial_guess(self):
+        #coeff = np.zeros((self.N-1,self.nc))
+        #coeff[0] = self.c0
+        coeff = self.c0
+
+        coeff_flat = coeff.flatten()
+        guess = coeff_flat
+        return guess
+    
+    def flat2vec(self, Z):
+        coeff = Z.reshape((self.N-1, self.nc))
+        return coeff
+    
+    def LQRcost_fast(self, Z):
+        #coeff = self.flat2vec(Z)
+        coeff = Z
+
+        Sfwd = np.zeros((self.N,self.ns))
+        Sfwd[0] = self.sref[0]
+        for i in range(self.N-1):
+            sn = Sfwd[i]
+            un = self.uref[i]
+            #cn = coeff[i]
+            cn = coeff
+            Sfwd[i+1] = self.model.extended_rk4(sn, un, cn, self.dt)
+
+        S = Sfwd[:-1]
+
+        cost = 0
+        cost += np.sum(0.5 * np.vecdot((S-self.sref[:-1]), np.multiply(self.Qvec, S-self.sref[:-1])))
+        cost += np.sum(0.5 * np.vecdot((Sfwd[-1]-self.sref[-1]), np.multiply(self.Qfvec, Sfwd[-1]-self.sref[-1])))
+        cost += np.sum(0.5 * np.vecdot((coeff-self.c0), np.multiply(self.Pvec, coeff-self.c0)))
+        #print(f"cost from states: {cost}")
+        #cost_coeff = np.sum(0.5 * np.vecdot((coeff[1:]-coeff[:-1]), np.multiply(self.Pvec, coeff[1:]-coeff[:-1])))
+        #cost_coeff = np.sqrt(np.sum(np.square(coeff)))
+        #cost += cost_coeff
+        #print(f"cost from coefficients: {cost_coeff}")
+
+        return cost
+    
+    def inequality_constraints_fast(self, Z):
+        coeff = Z
+
+        constraints_min_controls = coeff - self.c_min
+        constraints_max_controls = -coeff + self.c_max
+        
+        constraints = np.concatenate((constraints_min_controls.flatten(), constraints_max_controls.flatten()))
+
+        assert np.all(np.isfinite(constraints)), "NaN or Inf in constraints"
+        return np.array(constraints)
+    
+    def exec_MPC(self):
+        constraints = [
+            {"type": "ineq", "fun": self.inequality_constraints_fast}
+        ]
+
+        self.sol = ipopt.minimize_ipopt(
+            fun=self.LQRcost_fast,
+            x0=self.Z0,
+            constraints=constraints,
+            tol=1e-4,
+            options={"disp": 5,
+                     'linear_solver': 'ma57',
+                     'hsllib': f"{os.environ['CONDA_PREFIX']}/lib/x86_64-linux-gnu/libcoinhsl.so"}
+        )
