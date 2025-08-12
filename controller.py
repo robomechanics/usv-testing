@@ -239,6 +239,30 @@ class MPC:
         assert np.all(np.isfinite(constraints)), "NaN or Inf in constraints"
         return constraints.flatten()
     
+    def extended_equality_constraints_fast(self, Z):
+        states, inputs = self.flat2vec(Z)
+
+        constraints = np.zeros((self.N-1+2, self.ns))
+
+        # Initial and terminal constraints
+        initial_constraint = states[0] - self.s0
+        terminal_constraint = states[-1] - self.sf
+        constraints[-1] = initial_constraint
+        constraints[-2] = terminal_constraint
+
+        # Dynamics constraints
+        for i in range(self.N-1):
+            sn = states[i]
+            snp1 = states[i+1]
+            un = inputs[i]
+            #dyn_snp1 = self.model.euler(sn, un, self.dt)
+            #dynamics_constraint = snp1 - dyn_snp1
+            dynamics_constraint = self.model.extended_hermite_simpson(sn, snp1, un, self.MHE_coeff, self.dt)
+            constraints[i] = dynamics_constraint
+
+        assert np.all(np.isfinite(constraints)), "NaN or Inf in constraints"
+        return constraints.flatten()
+    
     def inequality_constraints_fast(self, Z):
         states, inputs = self.flat2vec(Z)
 
@@ -258,7 +282,7 @@ class MPC:
         assert np.all(np.isfinite(constraints)), "NaN or Inf in constraints"
         return np.array(constraints)
     
-    def exec_MPC(self, version="with_traj"):
+    def exec_MPC(self, version="with_traj", MHE_coeff=None):
         print(f"Running MPC Solver Version: {version}")
 
         constraints = [
@@ -289,6 +313,27 @@ class MPC:
                         'linear_solver': 'ma57',
                         'hsllib': f"{os.environ['CONDA_PREFIX']}/lib/x86_64-linux-gnu/libcoinhsl.so"}
             )
+        
+        if version == "with_MHE":
+            print(f"Executed MPC Solver Version: with_MHE")
+            if(MHE_coeff is None): 
+                print(f"User did not define MHE coefficient")
+                return
+            else:
+                self.MHE_coeff = MHE_coeff
+                constraints = [
+                    {"type": "eq", "fun": self.extended_equality_constraints_fast},
+                    {"type": "ineq", "fun": self.inequality_constraints_fast}
+                ]
+                self.sol = ipopt.minimize_ipopt(
+                    fun=self.LQRcost_fast,
+                    x0=self.Z0,
+                    constraints=constraints,
+                    tol=1e-3, # default 1e-3
+                    options={"disp": 5,
+                            'linear_solver': 'ma57',
+                            'hsllib': f"{os.environ['CONDA_PREFIX']}/lib/x86_64-linux-gnu/libcoinhsl.so"}
+                )
 
 class MHE:
     def __init__(self, model: VesselModel, N, ns, nu, nc, dt, Qvec, Rvec, Qfvec, Pvec, c0, sref, uref):
