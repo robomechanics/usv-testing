@@ -51,7 +51,7 @@ class VesselModel:
     
     def rk4_addvel(self, Sn, Un, dt):
         angle = np.pi/3
-        mag = 0.05
+        mag = 0.4
         added_vel = np.array([mag*np.cos(angle), mag*np.sin(angle), 0, 0, 0, 0])
 
         k1 = self.dynamics(Sn, Un) + added_vel
