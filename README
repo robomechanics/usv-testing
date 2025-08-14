@@ -1,3 +1,5 @@
 requirements can be installed via the following command
 
 conda create -n usv-project -c conda-forge gfortran cyipopt numpy scipy matplotlib pyyaml ipykernel
+
+now with more compute!
