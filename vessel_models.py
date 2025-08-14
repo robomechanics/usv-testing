@@ -9,9 +9,15 @@ class VesselModel:
         params_yaml.close()
 
         if mismatch:
-            for key in self.params:
-                self.params[key] *= np.random.uniform(low=1.5, high=2.0)
-                self.params[key] += np.random.uniform(low=0.0, high=1.0)
+            param_keys = list(self.params.keys())
+            for i in range(13):
+                key = param_keys[i]
+                self.params[key] *= 2.0
+                self.params[key] += 1.0
+            for i in range(13, len(param_keys)):
+                key = param_keys[i]
+                self.params[key] *= 1.25
+                self.params[key] += 0.0
             print(self.params)
 
         keys = ['m', 'x_g', 'I_z', 'X_du', 'Y_dv', 'Y_dr', 'N_dv', 'N_dr']
@@ -51,7 +57,7 @@ class VesselModel:
     
     def rk4_addvel(self, Sn, Un, dt):
         angle = np.pi/3
-        mag = 0.4
+        mag = 0.1
         added_vel = np.array([mag*np.cos(angle), mag*np.sin(angle), 0, 0, 0, 0])
 
         k1 = self.dynamics(Sn, Un) + added_vel
@@ -132,21 +138,23 @@ class VesselModel:
     """
     def extended_dynamics(self, Sn: np.ndarray, Un: np.ndarray, Z: np.ndarray):
         # state s in form [x y psi u v r]
-        # Hydrodynamic coeff Cn in form [X_u X_uu Y_v Y_vv Y_r N_v N_r N_rr X_du Y_dv Y_dr N_dv N_dr] + [G...] of fudge factors
+        # Hydrodynamic coeff Cn in form [X_u X_uu Y_v Y_vv Y_r N_v N_r N_rr X_du Y_dv Y_dr N_dv N_dr m I_z x_g] + [G...] of fudge factors
         x, y, psi, u, v, r = Sn
 
-        Cn = Z[:13]
-        Gn = Z[13:]
-        X_u, X_uu, Y_v, Y_vv, Y_r, N_v, N_r, N_rr, X_du, Y_dv, Y_dr, N_dv, N_dr = Cn
+        #print(Z)
+        Cn = Z[:16]
+        Gn = Z[16:]
+        X_u, X_uu, Y_v, Y_vv, Y_r, N_v, N_r, N_rr, X_du, Y_dv, Y_dr, N_dv, N_dr, m, I_z, x_g = Cn
         G_u, G_v, G_r, G_uu, G_vv, G_rr = Gn
+        #print(f"m = {m}")
 
         # Calculate mass matrix
         M = np.zeros((3,3))
-        M[0,0] = self.m - X_du
-        M[1,1] = self.m - Y_dv
-        M[1,2] = self.m*self.x_g - Y_dr
-        M[2,1] = self.m*self.x_g - N_dv
-        M[2,2] = self.I_z - N_dr
+        M[0,0] = m - X_du
+        M[1,1] = m - Y_dv
+        M[1,2] = m*x_g - Y_dr
+        M[2,1] = m*x_g - N_dv
+        M[2,2] = I_z - N_dr
         #print(M)
 
         Minv = inv(M)
@@ -164,10 +172,10 @@ class VesselModel:
 
         # Calculate change in  body velocity
         C = np.zeros((3,3))
-        C[0,2] = -(self.m-Y_dv)*v - (self.m*self.x_g-Y_dr)*r
-        C[1,2] = (self.m-X_du)*u
-        C[2,0] = (self.m-Y_dv)*v + (self.m*self.x_g-Y_dr)*r
-        C[2,1] = -(self.m-X_du)*u
+        C[0,2] = -(m-Y_dv)*v - (m*x_g-Y_dr)*r
+        C[1,2] = (m-X_du)*u
+        C[2,0] = (m-Y_dv)*v + (m*x_g-Y_dr)*r
+        C[2,1] = -(m-X_du)*u
         #print(C)
 
         D = np.zeros((3,3))

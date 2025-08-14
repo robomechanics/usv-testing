@@ -298,8 +298,9 @@ class MPC:
                 constraints=constraints,
                 tol=1e-3, # default 1e-3
                 options={"disp": 5,
-                        'linear_solver': 'ma57',
-                        'hsllib': f"{os.environ['CONDA_PREFIX']}/lib/x86_64-linux-gnu/libcoinhsl.so"}
+                         'maxiter': 400,
+                         'linear_solver': 'ma57',
+                         'hsllib': f"{os.environ['CONDA_PREFIX']}/lib/x86_64-linux-gnu/libcoinhsl.so"}
             )
         
         if version == "without_traj":
@@ -310,8 +311,9 @@ class MPC:
                 constraints=constraints,
                 tol=1e-3, # default 1e-3
                 options={"disp": 5,
-                        'linear_solver': 'ma57',
-                        'hsllib': f"{os.environ['CONDA_PREFIX']}/lib/x86_64-linux-gnu/libcoinhsl.so"}
+                         'maxiter': 400,
+                         'linear_solver': 'ma57',
+                         'hsllib': f"{os.environ['CONDA_PREFIX']}/lib/x86_64-linux-gnu/libcoinhsl.so"}
             )
         
         if version == "with_MHE":
@@ -331,8 +333,9 @@ class MPC:
                     constraints=constraints,
                     tol=1e-3, # default 1e-3
                     options={"disp": 5,
-                            'linear_solver': 'ma57',
-                            'hsllib': f"{os.environ['CONDA_PREFIX']}/lib/x86_64-linux-gnu/libcoinhsl.so"}
+                             'maxiter': 400,
+                             'linear_solver': 'ma57',
+                             'hsllib': f"{os.environ['CONDA_PREFIX']}/lib/x86_64-linux-gnu/libcoinhsl.so"}
                 )
 
 class MHE:
@@ -410,8 +413,9 @@ class MHE:
 
         constraints_min_controls = coeff - self.c_min
         constraints_max_controls = -coeff + self.c_max
+        constraints_mass_values = coeff[13:15]
         
-        constraints = np.concatenate((constraints_min_controls.flatten(), constraints_max_controls.flatten()))
+        constraints = np.concatenate((constraints_min_controls.flatten(), constraints_max_controls.flatten(), constraints_mass_values.flatten()))
 
         assert np.all(np.isfinite(constraints)), "NaN or Inf in constraints"
         return np.array(constraints)
@@ -427,6 +431,7 @@ class MHE:
             constraints=constraints,
             tol=1e-4,
             options={"disp": 5,
+                     'maxiter': 400,
                      'linear_solver': 'ma57',
                      'hsllib': f"{os.environ['CONDA_PREFIX']}/lib/x86_64-linux-gnu/libcoinhsl.so"}
         )
