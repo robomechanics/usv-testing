@@ -104,6 +104,9 @@ class TrajOpt:
         return np.array(constraints)
     
     def exec_trajopt(self):
+        #hsllib_path = f"{os.environ['CONDA_PREFIX']}/lib/x86_64-linux-gnu/libcoinhsl.so" # for local machine
+        hsllib_path = f"{os.environ['CONDA_PREFIX']}/lib64/libcoinhsl.so" # for NCSA
+
         constraints = [
             {"type": "eq", "fun": self.equality_constraints_fast},
             {"type": "ineq", "fun": self.inequality_constraints_fast}
@@ -116,7 +119,7 @@ class TrajOpt:
             tol=1e-3,
             options={"disp": 5,
                      'linear_solver': 'ma57',
-                     'hsllib': f"{os.environ['CONDA_PREFIX']}/lib/x86_64-linux-gnu/libcoinhsl.so"}
+                     'hsllib': hsllib_path}
         )
 
 class MPC:
@@ -285,6 +288,9 @@ class MPC:
     def exec_MPC(self, version="with_traj", MHE_coeff=None):
         print(f"Running MPC Solver Version: {version}")
 
+        #hsllib_path = f"{os.environ['CONDA_PREFIX']}/lib/x86_64-linux-gnu/libcoinhsl.so" # for local machine
+        hsllib_path = f"{os.environ['CONDA_PREFIX']}/lib64/libcoinhsl.so" # for NCSA
+
         constraints = [
             {"type": "eq", "fun": self.equality_constraints_fast},
             {"type": "ineq", "fun": self.inequality_constraints_fast}
@@ -300,7 +306,7 @@ class MPC:
                 options={"disp": 5,
                          'maxiter': 400,
                          'linear_solver': 'ma57',
-                         'hsllib': f"{os.environ['CONDA_PREFIX']}/lib/x86_64-linux-gnu/libcoinhsl.so"}
+                         'hsllib': hsllib_path}
             )
         
         if version == "without_traj":
@@ -313,7 +319,7 @@ class MPC:
                 options={"disp": 5,
                          'maxiter': 400,
                          'linear_solver': 'ma57',
-                         'hsllib': f"{os.environ['CONDA_PREFIX']}/lib/x86_64-linux-gnu/libcoinhsl.so"}
+                         'hsllib': hsllib_path}
             )
         
         if version == "with_MHE":
@@ -335,7 +341,7 @@ class MPC:
                     options={"disp": 5,
                              'maxiter': 400,
                              'linear_solver': 'ma57',
-                             'hsllib': f"{os.environ['CONDA_PREFIX']}/lib/x86_64-linux-gnu/libcoinhsl.so"}
+                             'hsllib': hsllib_path}
                 )
 
 class MHE:
@@ -421,6 +427,9 @@ class MHE:
         return np.array(constraints)
     
     def exec_MPC(self):
+        #hsllib_path = f"{os.environ['CONDA_PREFIX']}/lib/x86_64-linux-gnu/libcoinhsl.so" # for local machine
+        hsllib_path = f"{os.environ['CONDA_PREFIX']}/lib64/libcoinhsl.so" # for NCSA
+
         constraints = [
             {"type": "ineq", "fun": self.inequality_constraints_fast}
         ]
@@ -433,5 +442,5 @@ class MHE:
             options={"disp": 5,
                      'maxiter': 400,
                      'linear_solver': 'ma57',
-                     'hsllib': f"{os.environ['CONDA_PREFIX']}/lib/x86_64-linux-gnu/libcoinhsl.so"}
+                     'hsllib': hsllib_path}
         )
