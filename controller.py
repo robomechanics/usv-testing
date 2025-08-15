@@ -89,9 +89,19 @@ class TrajOpt:
     def inequality_constraints_fast(self, Z):
         states, inputs = self.flat2vec(Z)
 
-        constraints_min_controls = inputs - self.u_min
-        constraints_max_controls = -inputs + self.u_max
-        constraints = np.concatenate((constraints_min_controls.flatten(), constraints_max_controls.flatten()))
+        #constraints_min_controls = inputs - self.u_min
+        constraints_min_controls_u = inputs[:, 0] - self.u_min * 0.2
+        constraints_min_controls_v = inputs[:, 1] - self.u_min * 0.5
+        constraints_min_controls_r = inputs[:, 2] - self.u_min
+
+        #constraints_max_controls = -inputs + self.u_max
+        constraints_max_controls_u = -inputs[:, 0] + self.u_max
+        constraints_max_controls_v = -inputs[:, 1] + self.u_max * 0.5
+        constraints_max_controls_r = -inputs[:, 2] + self.u_max
+        
+        #constraints = np.concatenate((constraints_min_controls.flatten(), constraints_max_controls.flatten()))
+        constraints = np.concatenate((constraints_min_controls_u.flatten(), constraints_min_controls_v.flatten(), constraints_min_controls_r.flatten(),
+                                      constraints_max_controls_u.flatten(), constraints_max_controls_v.flatten(), constraints_max_controls_r.flatten()))
                                       
         X = states[:,0]
         Y = states[:,1]
@@ -269,10 +279,19 @@ class MPC:
     def inequality_constraints_fast(self, Z):
         states, inputs = self.flat2vec(Z)
 
-        constraints_min_controls = inputs - self.u_min
-        constraints_max_controls = -inputs + self.u_max
-        constraints = np.concatenate((constraints_min_controls.flatten(), constraints_max_controls.flatten()))
+        #constraints_min_controls = inputs - self.u_min
+        constraints_min_controls_u = inputs[:, 0] - self.u_min * 0.2
+        constraints_min_controls_v = inputs[:, 1] - self.u_min * 0.5
+        constraints_min_controls_r = inputs[:, 2] - self.u_min
 
+        #constraints_max_controls = -inputs + self.u_max
+        constraints_max_controls_u = -inputs[:, 0] + self.u_max
+        constraints_max_controls_v = -inputs[:, 1] + self.u_max * 0.5
+        constraints_max_controls_r = -inputs[:, 2] + self.u_max
+        
+        #constraints = np.concatenate((constraints_min_controls.flatten(), constraints_max_controls.flatten()))
+        constraints = np.concatenate((constraints_min_controls_u.flatten(), constraints_min_controls_v.flatten(), constraints_min_controls_r.flatten(),
+                                      constraints_max_controls_u.flatten(), constraints_max_controls_v.flatten(), constraints_max_controls_r.flatten()))
         X = states[:,0]
         Y = states[:,1]
         for obstacle in self.obs:
