@@ -104,8 +104,8 @@ class TrajOpt:
         return np.array(constraints)
     
     def exec_trajopt(self):
-        #hsllib_path = f"{os.environ['CONDA_PREFIX']}/lib/x86_64-linux-gnu/libcoinhsl.so" # for local machine
-        hsllib_path = f"{os.environ['CONDA_PREFIX']}/lib64/libcoinhsl.so" # for NCSA
+        hsllib_path = f"{os.environ['CONDA_PREFIX']}/lib/x86_64-linux-gnu/libcoinhsl.so" # for local machine
+        #hsllib_path = f"{os.environ['CONDA_PREFIX']}/lib64/libcoinhsl.so" # for NCSA
 
         constraints = [
             {"type": "eq", "fun": self.equality_constraints_fast},
@@ -288,8 +288,8 @@ class MPC:
     def exec_MPC(self, version="with_traj", MHE_coeff=None):
         print(f"Running MPC Solver Version: {version}")
 
-        #hsllib_path = f"{os.environ['CONDA_PREFIX']}/lib/x86_64-linux-gnu/libcoinhsl.so" # for local machine
-        hsllib_path = f"{os.environ['CONDA_PREFIX']}/lib64/libcoinhsl.so" # for NCSA
+        hsllib_path = f"{os.environ['CONDA_PREFIX']}/lib/x86_64-linux-gnu/libcoinhsl.so" # for local machine
+        #hsllib_path = f"{os.environ['CONDA_PREFIX']}/lib64/libcoinhsl.so" # for NCSA
 
         constraints = [
             {"type": "eq", "fun": self.equality_constraints_fast},
@@ -427,8 +427,8 @@ class MHE:
         return np.array(constraints)
     
     def exec_MPC(self):
-        #hsllib_path = f"{os.environ['CONDA_PREFIX']}/lib/x86_64-linux-gnu/libcoinhsl.so" # for local machine
-        hsllib_path = f"{os.environ['CONDA_PREFIX']}/lib64/libcoinhsl.so" # for NCSA
+        hsllib_path = f"{os.environ['CONDA_PREFIX']}/lib/x86_64-linux-gnu/libcoinhsl.so" # for local machine
+        #hsllib_path = f"{os.environ['CONDA_PREFIX']}/lib64/libcoinhsl.so" # for NCSA
 
         constraints = [
             {"type": "ineq", "fun": self.inequality_constraints_fast}
