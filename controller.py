@@ -90,7 +90,7 @@ class TrajOpt:
         states, inputs = self.flat2vec(Z)
 
         #constraints_min_controls = inputs - self.u_min
-        constraints_min_controls_u = inputs[:, 0] - self.u_min * 0.2
+        constraints_min_controls_u = inputs[:, 0] - self.u_min
         constraints_min_controls_v = inputs[:, 1] - self.u_min * 0.5
         constraints_min_controls_r = inputs[:, 2] - self.u_min
 
@@ -280,7 +280,7 @@ class MPC:
         states, inputs = self.flat2vec(Z)
 
         #constraints_min_controls = inputs - self.u_min
-        constraints_min_controls_u = inputs[:, 0] - self.u_min * 0.2
+        constraints_min_controls_u = inputs[:, 0] - self.u_min * 0.5
         constraints_min_controls_v = inputs[:, 1] - self.u_min * 0.5
         constraints_min_controls_r = inputs[:, 2] - self.u_min
 
