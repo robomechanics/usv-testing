@@ -157,6 +157,12 @@ class VesselModel:
         M[2,2] = I_z - N_dr
         #print(M)
 
+        #condition_number = np.linalg.cond(M)
+        #if condition_number < 1e4 and np.abs(np.linalg.det(M)) > 0.0:
+        #    Minv = inv(M)
+        #else:
+        #    Minv = np.identity(3)
+
         Minv = inv(M)
 
         # Calculate change in NED position

@@ -305,7 +305,7 @@ class MPC:
         return np.array(constraints)
     
     def exec_MPC(self, version="with_traj", MHE_coeff=None):
-        print(f"Running MPC Solver Version: {version}")
+        #print(f"Running MPC Solver Version: {version}")
 
         hsllib_path = f"{os.environ['CONDA_PREFIX']}/lib/x86_64-linux-gnu/libcoinhsl.so" # for local machine
         #hsllib_path = f"{os.environ['CONDA_PREFIX']}/lib64/libcoinhsl.so" # for NCSA
@@ -316,33 +316,33 @@ class MPC:
         ]
 
         if version == "with_traj":
-            print(f"Executed MPC Solver Version: with_traj")
+            #print(f"Executed MPC Solver Version: with_traj")
             self.sol = ipopt.minimize_ipopt(
                 fun=self.LQRcost_fast,
                 x0=self.Z0,
                 constraints=constraints,
                 tol=1e-3, # default 1e-3
-                options={"disp": 5,
+                options={"disp": 1,
                          'maxiter': 400,
                          'linear_solver': 'ma57',
                          'hsllib': hsllib_path}
             )
         
         if version == "without_traj":
-            print(f"Executed MPC Solver Version: without_traj")
+            #print(f"Executed MPC Solver Version: without_traj")
             self.sol = ipopt.minimize_ipopt(
                 fun=self.LQRcost_dist,
                 x0=self.Z0,
                 constraints=constraints,
                 tol=1e-3, # default 1e-3
-                options={"disp": 5,
+                options={"disp": 1,
                          'maxiter': 400,
                          'linear_solver': 'ma57',
                          'hsllib': hsllib_path}
             )
         
         if version == "with_MHE":
-            print(f"Executed MPC Solver Version: with_MHE")
+            #print(f"Executed MPC Solver Version: with_MHE")
             if(MHE_coeff is None): 
                 print(f"User did not define MHE coefficient")
                 return
@@ -357,7 +357,7 @@ class MPC:
                     x0=self.Z0,
                     constraints=constraints,
                     tol=1e-3, # default 1e-3
-                    options={"disp": 5,
+                    options={"disp": 1,
                              'maxiter': 400,
                              'linear_solver': 'ma57',
                              'hsllib': hsllib_path}
@@ -438,7 +438,7 @@ class MHE:
 
         constraints_min_controls = coeff - self.c_min
         constraints_max_controls = -coeff + self.c_max
-        constraints_mass_values = coeff[13:15]
+        constraints_mass_values = coeff[13:15] - 0.01
         
         constraints = np.concatenate((constraints_min_controls.flatten(), constraints_max_controls.flatten(), constraints_mass_values.flatten()))
 
@@ -458,7 +458,7 @@ class MHE:
             x0=self.Z0,
             constraints=constraints,
             tol=1e-4,
-            options={"disp": 5,
+            options={"disp": 1,
                      'maxiter': 400,
                      'linear_solver': 'ma57',
                      'hsllib': hsllib_path}
